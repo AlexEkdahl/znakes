@@ -3,3 +3,6 @@ build:
 
 run: build
 	@./bin/game
+
+test: build
+	go test ./... -v
