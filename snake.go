@@ -162,5 +162,5 @@ func (s *Snake) String() string {
 }
 
 func (n *Node) String() string {
-	return fmt.Sprintf("(%d, %d)", n.x, n.y)
+	return fmt.Sprintf("[x:%d, y:%d]", n.x, n.y)
 }

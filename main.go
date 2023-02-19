@@ -10,14 +10,16 @@ import (
 )
 
 const (
-	VOID        = 0
-	WALL        = 1
-	PLAYER      = 2
-	GHOST       = 3
-	VOID_ICON   = " "
-	WALL_ICON   = "█"
-	PLAYER_ICON = "☻"
-	GHOST_ICON  = "⛇"
+	VOID            = 0
+	WALL            = 1
+	SNAKE           = 2
+	SNAKE_HEAD      = 4
+	FRUIT           = 3
+	VOID_ICON       = " "
+	WALL_ICON       = "█"
+	SNAKE_ICON      = "\033[31m█\033[0m"
+	SNAKE_HEAD_ICON = "\033[37m█\033[0m"
+	FRUIT_ICON      = "⛇"
 )
 
 type game struct {
@@ -79,10 +81,12 @@ func (g *game) renderLevel() {
 			switch g.level.data[h][w] {
 			case WALL:
 				g.drawBuff.WriteString(WALL_ICON)
-			case PLAYER:
-				g.drawBuff.WriteString(PLAYER_ICON)
-			case GHOST:
-				g.drawBuff.WriteString(GHOST_ICON)
+			case SNAKE:
+				g.drawBuff.WriteString(SNAKE_ICON)
+			case SNAKE_HEAD:
+				g.drawBuff.WriteString(SNAKE_HEAD_ICON)
+			case FRUIT:
+				g.drawBuff.WriteString(FRUIT_ICON)
 			case VOID:
 				g.drawBuff.WriteString(VOID_ICON)
 			}
@@ -92,8 +96,18 @@ func (g *game) renderLevel() {
 }
 
 func (g *game) gameLoop() {
-	g.level.data[2][3] = PLAYER
-	g.level.data[5][3] = GHOST
+	s := NewSnakeWithLength(4, 4)
+	s.Turn(Right)
+	s.Move()
+	for curr := s.head; curr != nil; curr = curr.next {
+		if curr == s.head {
+			g.level.data[curr.y][curr.x] = SNAKE_HEAD
+			continue
+		}
+		g.level.data[curr.y][curr.x] = SNAKE
+	}
+
+	g.level.data[5][3] = FRUIT
 	for {
 		clearScreen()
 		g.renderLevel()
