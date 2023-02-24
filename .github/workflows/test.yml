@@ -12,5 +12,7 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
     - uses: actions/checkout@v3
+    - uses: PxyUp/protoc-actions@v3.0.0
+      with:
+        path: protoc --go_out=. --proto_path=network/ network/protobuf/message.proto
     - run: go test ./... -v
-
