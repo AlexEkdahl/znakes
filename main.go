@@ -110,6 +110,18 @@ func (g *game) gameLoop() {
 	g.level.data[5][3] = FRUIT
 	for {
 		clearScreen()
+		fmt.Println("s.Check(g.level.data)", s.Check(g.level.data))
+		if s.Check(g.level.data) {
+			s.Move()
+		}
+
+		for curr := s.head; curr != nil; curr = curr.next {
+			if curr == s.head {
+				g.level.data[curr.y][curr.x] = SNAKE_HEAD
+				continue
+			}
+			g.level.data[curr.y][curr.x] = SNAKE
+		}
 		g.renderLevel()
 		fmt.Print(g.drawBuff.String())
 		time.Sleep(time.Millisecond * 32)
@@ -121,7 +133,7 @@ func (g *game) start() {
 }
 
 func main() {
-	g := newGame(80, 18)
+	g := newGame(40, 40)
 	g.start()
 }
 

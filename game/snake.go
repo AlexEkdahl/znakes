@@ -1,16 +1,9 @@
-package main
+package game
 
 import (
 	"bytes"
 	"fmt"
 	"strconv"
-)
-
-const (
-	Up    = 0
-	Down  = 1
-	Left  = 2
-	Right = 3
 )
 
 type Node struct {
@@ -22,40 +15,34 @@ type Snake struct {
 	head   *Node // pointer to the head node of the snake
 	tail   *Node // pointer to the tail node of the snake
 	length int   // length of the snake
-	dir    int   // direction snake is facing (0 = Up, 1 = Down, 2 = Left, 3 = Right)
+	dir    Direction
 }
 
 func NewSnake(x, y int) *Snake {
-	// create the head node
 	head := &Node{x: x, y: y}
 
-	// create the snake with a length of 1 and no direction
 	return &Snake{
 		head:   head,
 		tail:   head,
 		length: 1,
-		dir:    Up,
+		dir:    Right,
 	}
 }
 
 func NewSnakeWithLength(x, y int) *Snake {
-	// create the head node
 	head := &Node{x: x, y: y}
 
-	// create the middle node
 	middle := &Node{x: x, y: y + 1}
 	head.next = middle
 
-	// create the tail node
 	tail := &Node{x: x, y: y + 2}
 	middle.next = tail
 
-	// create the snake with length 3 and no direction
 	return &Snake{
 		head:   head,
 		tail:   tail,
 		length: 3,
-		dir:    0,
+		dir:    Right,
 	}
 }
 
@@ -91,25 +78,15 @@ func (s *Snake) Move() {
 	}
 }
 
-func (s *Snake) Turn(dir int) {
-	switch s.dir {
-	case Up:
-		if dir == Left || dir == Right {
-			s.dir = dir
-		}
-	case Right:
-		if dir == Up || dir == Down {
-			s.dir = dir
-		}
-	case Down:
-		if dir == Left || dir == Right {
-			s.dir = dir
-		}
-	case Left:
-		if dir == Up || dir == Down {
-			s.dir = dir
-		}
+func (s *Snake) SetDirection(direction Direction) {
+	if s.dir == Up && direction == Down ||
+		s.dir == Down && direction == Up ||
+		s.dir == Left && direction == Right ||
+		s.dir == Right && direction == Left {
+		return
 	}
+
+	s.dir = direction
 }
 
 func (s *Snake) CollidesWith(x, y int) bool {
@@ -121,6 +98,17 @@ func (s *Snake) CollidesWith(x, y int) bool {
 		curr = curr.next
 	}
 	return false
+}
+
+func (s *Snake) Check(matrix [][]int) bool {
+	curr := s.head
+	for curr != nil {
+		if matrix[curr.x][curr.y] == 1 {
+			return false
+		}
+		curr = curr.next
+	}
+	return true
 }
 
 func (s *Snake) String() string {
