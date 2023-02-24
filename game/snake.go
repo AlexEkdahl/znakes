@@ -12,20 +12,20 @@ type Node struct {
 }
 
 type Snake struct {
-	head   *Node // pointer to the head node of the snake
-	tail   *Node // pointer to the tail node of the snake
-	length int   // length of the snake
-	dir    Direction
+	Head   *Node // pointer to the head node of the snake
+	Tail   *Node // pointer to the tail node of the snake
+	Length int   // length of the snake
+	Dir    Direction
 }
 
 func NewSnake(x, y int) *Snake {
 	head := &Node{x: x, y: y}
 
 	return &Snake{
-		head:   head,
-		tail:   head,
-		length: 1,
-		dir:    Right,
+		Head:   head,
+		Tail:   head,
+		Length: 1,
+		Dir:    Right,
 	}
 }
 
@@ -39,58 +39,58 @@ func NewSnakeWithLength(x, y int) *Snake {
 	middle.next = tail
 
 	return &Snake{
-		head:   head,
-		tail:   tail,
-		length: 3,
-		dir:    Right,
+		Head:   head,
+		Tail:   tail,
+		Length: 3,
+		Dir:    Right,
 	}
 }
 
 func (s *Snake) Move() {
 	// calculate the new position of the head of the snake
 	var newHeadX, newHeadY int
-	switch s.dir {
+	switch s.Dir {
 	case Up:
-		newHeadX, newHeadY = s.head.x, s.head.y-1
+		newHeadX, newHeadY = s.Head.x, s.Head.y-1
 	case Right:
-		newHeadX, newHeadY = s.head.x+1, s.head.y
+		newHeadX, newHeadY = s.Head.x+1, s.Head.y
 	case Down:
-		newHeadX, newHeadY = s.head.x, s.head.y+1
+		newHeadX, newHeadY = s.Head.x, s.Head.y+1
 	case Left:
-		newHeadX, newHeadY = s.head.x-1, s.head.y
+		newHeadX, newHeadY = s.Head.x-1, s.Head.y
 	}
 
 	// create a new head node and add it to the beginning of the snake
-	newHead := &Node{newHeadX, newHeadY, s.head}
-	s.head = newHead
+	newHead := &Node{newHeadX, newHeadY, s.Head}
+	s.Head = newHead
 
 	// if the snake hasn't grown, remove the last node
-	if s.length == 0 {
+	if s.Length == 0 {
 		// find the new tail node
-		curr := s.head
+		curr := s.Head
 		for curr.next.next != nil {
 			curr = curr.next
 		}
-		s.tail = curr
-		s.tail.next = nil
+		s.Tail = curr
+		s.Tail.next = nil
 	} else {
-		s.length--
+		s.Length--
 	}
 }
 
 func (s *Snake) SetDirection(direction Direction) {
-	if s.dir == Up && direction == Down ||
-		s.dir == Down && direction == Up ||
-		s.dir == Left && direction == Right ||
-		s.dir == Right && direction == Left {
+	if s.Dir == Up && direction == Down ||
+		s.Dir == Down && direction == Up ||
+		s.Dir == Left && direction == Right ||
+		s.Dir == Right && direction == Left {
 		return
 	}
 
-	s.dir = direction
+	s.Dir = direction
 }
 
 func (s *Snake) CollidesWith(x, y int) bool {
-	curr := s.head
+	curr := s.Head
 	for curr != nil {
 		if curr.x == x && curr.y == y {
 			return true
@@ -101,7 +101,7 @@ func (s *Snake) CollidesWith(x, y int) bool {
 }
 
 func (s *Snake) Check(matrix [][]int) bool {
-	curr := s.head
+	curr := s.Head
 	for curr != nil {
 		if matrix[curr.x][curr.y] == 1 {
 			return false
@@ -115,19 +115,19 @@ func (s *Snake) String() string {
 	var buf bytes.Buffer
 
 	buf.WriteString("Head: ")
-	buf.WriteString(s.head.String())
+	buf.WriteString(s.Head.String())
 	buf.WriteString("\n")
 
 	buf.WriteString("Tail: ")
-	buf.WriteString(s.tail.String())
+	buf.WriteString(s.Tail.String())
 	buf.WriteString("\n")
 
 	buf.WriteString("Length: ")
-	buf.WriteString(strconv.Itoa(s.length))
+	buf.WriteString(strconv.Itoa(s.Length))
 	buf.WriteString("\n")
 
 	buf.WriteString("Direction: ")
-	switch s.dir {
+	switch s.Dir {
 	case Up:
 		buf.WriteString("Up")
 	case Right:
@@ -140,7 +140,7 @@ func (s *Snake) String() string {
 	buf.WriteString("\n")
 
 	buf.WriteString("Nodes:\n")
-	for node := s.head; node != nil; node = node.next {
+	for node := s.Head; node != nil; node = node.next {
 		buf.WriteString("  ")
 		buf.WriteString(node.String())
 		buf.WriteString("\n")

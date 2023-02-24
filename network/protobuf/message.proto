@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package snakes;
+
+option go_package = "network/protobuf";
+
+enum Direction {
+  UP = 0;
+  DOWN = 1;
+  LEFT = 2;
+  RIGHT = 3;
+}
+
+enum MessageType {
+  MessageType_Move = 0;
+  MessageType_Disconnect = 1;
+}
+
+message MoveMessage {
+  Direction direction = 1;
+}
+
+message InputMessage {
+  string player_id = 1;
+  MessageType type = 2;
+  repeated string data = 3;
+}
+
+message DisconnectMessage {}
+
+message JoinMessage {
+  string name = 1;
+}
+
+message StartGameMessage {}
+
+message GameStateMessage {
+  repeated Player players = 1;
+  repeated Food foods = 2;
+}
+
+message Player {
+  string id = 1;
+  repeated Point points = 2;
+}
+
+message Point {
+  int32 x = 1;
+  int32 y = 2;
+}
+
+message Food {
+  int32 x = 1;
+  int32 y = 2;
+}
+
+message Message {
+  oneof type {
+    MoveMessage move = 1;
+    DisconnectMessage disconnect = 2;
+    JoinMessage join = 3;
+    StartGameMessage start_game = 4;
+  }
+}

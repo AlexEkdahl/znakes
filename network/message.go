@@ -1,59 +1,48 @@
 package network
 
-import "github.com/golang/protobuf/proto"
-
-// MessageType represents the type of a message
-type MessageType int32
-
-const (
-	// Welcome represents a welcome message
-	Welcome MessageType = 0
-	// Join represents a join message
-	Join MessageType = 1
-	// GameState represents a game state message
-	GameState MessageType = 2
-	// Input represents an input message
-	Input MessageType = 3
-	// GameOver represents a game over message
-	GameOver MessageType = 4
+import (
+	"github.com/AlexEkdahl/snakes/network/protobuf"
+	"github.com/golang/protobuf/proto"
 )
 
-// Message represents a message
-type Message struct {
-	Type             MessageType
-	WelcomeMessage   *string
-	PlayerNum        int32
-	GameMode         GameMode
-	PlayerMode       PlayerMode
-	GameStateMessage *GameStateMessage
-	InputMessage     *InputMessage
-	GameOverMessage  *GameOverMessage
+type Messenger interface {
+	EncodeMessage() ([]byte, error)
+	DecodeMessage([]byte) (*protobuf.Message, error)
 }
 
-// InputMessage represents an input message
-type InputMessage struct {
-	Input      string
-	PlayerNum  int32
-	GameMode   GameMode
-	PlayerMode PlayerMode
+type protobufHandler struct {
+	Message interface{}
 }
 
-// GameStateMessage represents the game state in a message
-type GameStateMessage struct {
-	Game *Game
-}
+func (mh *protobufHandler) EncodeMessage() ([]byte, error) {
+	var pbMessage proto.Message
 
-// GameOverMessage represents a game over message
-type GameOverMessage struct {
-	Message string
-}
+	switch msg := mh.Message.(type) {
+	case *protobuf.MoveMessage:
+		pbMessage = &protobuf.Message{
+			Type: &protobuf.Message_Move{Move: msg},
+		}
+	case *protobuf.DisconnectMessage:
+		pbMessage = &protobuf.Message{
+			Type: &protobuf.Message_Disconnect{Disconnect: msg},
+		}
+	default:
+		joinMsg := &protobuf.Message{
+			Type: &protobuf.Message_Join{
+				Join: &protobuf.JoinMessage{},
+			},
+		}
+		return proto.Marshal(joinMsg)
+	}
 
-// Encode encodes a message as a protobuf message
-func EncodeMessage(m *Message) ([]byte, error) {
-	return proto.Marshal(m)
+	return proto.Marshal(pbMessage)
 }
 
 // Decode decodes a protobuf message into a message
-func DecodeMessage(data []byte, m *Message) error {
-	return proto.Unmarshal(data, m)
+func (mh *protobufHandler) DecodeMessage(data []byte) (*protobuf.Message, error) {
+	var msg protobuf.Message
+	if err := proto.Unmarshal(data, &msg); err != nil {
+		return nil, err
+	}
+	return &msg, nil
 }
