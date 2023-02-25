@@ -176,3 +176,5 @@ issues:
         - gosec
         - noctx
         - wrapcheck
+    - path: "**/*pb.go"
+      linters: [ golint ]

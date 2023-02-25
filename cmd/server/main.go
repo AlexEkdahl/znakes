@@ -11,8 +11,6 @@ import (
 	"github.com/AlexEkdahl/snakes/pkg/network"
 )
 
-// go:generate protoc --go_out=. --proto_path=pkg/network/ pkg/network/protobuf/message.proto
-
 func main() {
 	port := flag.String("port", ":8080", "The port number to use")
 	flag.Parse()

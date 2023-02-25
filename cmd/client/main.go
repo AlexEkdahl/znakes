@@ -12,8 +12,6 @@ import (
 	"github.com/eiannone/keyboard"
 )
 
-// go:generate protoc --go_out=. --proto_path=pkg/network/ pkg/network/protobuf/message.proto
-
 func main() {
 	port := flag.String("port", ":8080", "The port number to use")
 	flag.Parse()
@@ -28,6 +26,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer keyboard.Close()
 
 	client, err := network.NewClient(*port, moveChan)
 	if err != nil {
@@ -36,8 +35,8 @@ func main() {
 	go client.Start()
 
 	<-interrupt
-	fmt.Println("\nShutting down the server...")
 	keyboard.Close()
+	fmt.Println("\nShutting down...")
 }
 
 func readInput(mc chan game.Direction, stop chan os.Signal) {
