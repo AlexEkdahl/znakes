@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package snakes;
 
-option go_package = "network/protobuf";
+option go_package = "pkg/network/protobuf";
 
 enum Direction {
   UP = 0;

@@ -87,7 +87,6 @@ func (s *Snake) SetDirection(direction Direction) {
 	}
 
 	s.Dir = direction
-	fmt.Println("s.Di", s.Dir)
 }
 
 func (s *Snake) Occupies(x, y int) bool {

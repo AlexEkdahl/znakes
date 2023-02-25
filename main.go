@@ -1,11 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
-	"time"
 
 	"github.com/AlexEkdahl/snakes/game"
 	"github.com/AlexEkdahl/snakes/network"
@@ -13,40 +13,50 @@ import (
 )
 
 func main() {
-	err := keyboard.Open()
+	isServer, port, err := parseArgs()
 	if err != nil {
 		panic(err)
 	}
-	defer func() {
-		_ = keyboard.Close()
-	}()
 
 	moveChan := make(chan game.Direction, 10)
 	interrupt := make(chan os.Signal, 1)
-
-	go readInput(moveChan, interrupt)
-	g := game.NewGame(50, 15)
-
-	// Start the server
-	server, err := network.NewServer("localhost:8080", g)
-	if err != nil {
-		log.Fatal(err)
-	}
-	go server.Start()
-
-	// Start the client
-	client, err := network.NewClient("localhost:8080", moveChan)
-	if err != nil {
-		log.Fatal(err)
-	}
-	go client.Start()
-
 	signal.Notify(interrupt, os.Interrupt)
 
-	<-interrupt
-	fmt.Println("\nShutting down the server...")
-	server.Stop()
-	time.Sleep(1 * time.Second)
+	go readInput(moveChan, interrupt)
+
+	if isServer {
+
+		fmt.Println("isServer, port", isServer, port)
+		g := game.NewGame(50, 19)
+		server, err := network.NewServer("localhost:8080", g)
+		if err != nil {
+			log.Fatal(err)
+		}
+		go server.Start()
+		<-interrupt
+		fmt.Println("\nShutting down the server...")
+		server.Stop()
+	}
+	if !isServer {
+
+		err = keyboard.Open()
+		if err != nil {
+			panic(err)
+		}
+
+		client, err := network.NewClient("localhost:8080", moveChan)
+		if err != nil {
+			log.Fatal(err)
+		}
+		go client.Start()
+
+		<-interrupt
+		fmt.Println("\nShutting down the server...")
+		keyboard.Close()
+	}
+	// Start the server
+
+	// Start the client
 }
 
 func readInput(mc chan game.Direction, stop chan os.Signal) {
@@ -57,7 +67,6 @@ func readInput(mc chan game.Direction, stop chan os.Signal) {
 		}
 
 		if key == keyboard.KeyCtrlC || key == keyboard.KeyEsc {
-			keyboard.Close()
 			stop <- os.Interrupt
 			return
 		}
@@ -75,4 +84,34 @@ func readInput(mc chan game.Direction, stop chan os.Signal) {
 			continue
 		}
 	}
+}
+
+func parseArgs() (isServer bool, port int, err error) {
+	// Define command-line flags
+	serverFlag := flag.Bool("server", false, "Starts the program as a server")
+	clientFlag := flag.Bool("client", false, "Starts the program as a client")
+	portFlag := flag.Int("port", 8080, "The port number to use")
+
+	// Parse command-line flags
+	flag.Parse()
+
+	// Check that either the server or client flag is set
+	if !*serverFlag && !*clientFlag {
+		err = fmt.Errorf("must specify either --server or --client flag")
+		return
+	}
+
+	// Check that only one of the server or client flag is set
+	if *serverFlag && *clientFlag {
+		err = fmt.Errorf("cannot specify both --server and --client flags")
+		return
+	}
+
+	// Set the isServer flag based on the server flag
+	isServer = *serverFlag
+
+	// Set the port based on the port flag
+	port = *portFlag
+
+	return
 }

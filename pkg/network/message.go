@@ -1,7 +1,7 @@
 package network
 
 import (
-	"github.com/AlexEkdahl/snakes/network/protobuf"
+	"github.com/AlexEkdahl/snakes/pkg/network/protobuf"
 	"github.com/golang/protobuf/proto"
 )
 

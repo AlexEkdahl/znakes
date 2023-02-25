@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/AlexEkdahl/snakes/game"
-	"github.com/AlexEkdahl/snakes/network/protobuf"
+	"github.com/AlexEkdahl/snakes/pkg/game"
+	"github.com/AlexEkdahl/snakes/pkg/network/protobuf"
 )
 
 type MessagePrinter interface {

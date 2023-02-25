@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/AlexEkdahl/snakes/network/protobuf"
+	"github.com/AlexEkdahl/snakes/pkg/network/protobuf"
 	"github.com/google/uuid"
 )
 
