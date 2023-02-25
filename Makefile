@@ -21,11 +21,11 @@ build: $(SERVER_BINARY) $(CLIENT_BINARY)
 	@go build -ldflags="-s -w" -o bin/$(BINARY)
 
 # Run the server
-run-server: $(SERVER_BINARY)
+run-server: build
 	@./bin/$(SERVER_BINARY)
 
 # Run the client
-run-client: $(CLIENT_BINARY)
+run-client: build
 	@./bin/$(CLIENT_BINARY)
 
 # Run the game (server and client)
@@ -35,6 +35,10 @@ run: build
 # Run tests
 test:
 	go test ./... -v
+
+# Generate Go code from protobuf file
+generate:
+	go generate ./...
 
 # Clean up
 clean:

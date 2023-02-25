@@ -1,3 +1,5 @@
+//go:generate protoc --go_out=. --proto_path=protobuf protobuf/message.proto
+
 package network
 
 import (
