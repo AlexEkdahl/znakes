@@ -7,8 +7,8 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/AlexEkdahl/snakes/game"
-	"github.com/AlexEkdahl/snakes/network"
+	"github.com/AlexEkdahl/snakes/pkg/game"
+	"github.com/AlexEkdahl/snakes/pkg/network"
 	"github.com/eiannone/keyboard"
 )
 

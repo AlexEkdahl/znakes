@@ -2,9 +2,10 @@ name: Build and Test
 on: [push, pull_request]
 jobs:
   build:
+    runs-on: ${{ matrix.os }}
+    strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -14,4 +15,3 @@ jobs:
         run: make build
       - name: Test project
         run: make test
-
