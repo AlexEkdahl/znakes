@@ -15,7 +15,7 @@ type Player struct {
 }
 
 func NewPlayer(conn net.Conn) *Player {
-	s := NewSnake(1, 1) // get info someware
+	s := NewSnake(5, 5) // get info someware
 
 	return &Player{
 		Conn:  conn,
@@ -28,12 +28,3 @@ func NewPlayer(conn net.Conn) *Player {
 func (p *Player) String() string {
 	return fmt.Sprintf("Player %s (score: %d, snake: %s)", p.ID.String(), p.Score, p.Snake.String())
 }
-
-// func (p *Player) Listen() {
-// 	// code to listen for and handle player input
-// }
-//
-// func (p *Player) Write(msg []byte) error {
-// 	// code to write a message to the player's connection
-// 	return nil
-// }

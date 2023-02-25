@@ -6,10 +6,14 @@ import (
 
 	"github.com/AlexEkdahl/snakes/game"
 	"github.com/AlexEkdahl/snakes/network/protobuf"
+	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
 )
 
-const maxConcurrentConnections = 2
+const (
+	maxConcurrentConnections = 2
+	protocol                 = "tcp"
+)
 
 type Server struct {
 	game                  *game.Game
@@ -17,10 +21,12 @@ type Server struct {
 	player                map[uuid.UUID]*net.Conn
 	Messenger             Messenger
 	concurrentConnections chan struct{}
+	running               bool
+	hasConnections        chan struct{}
 }
 
-func NewServer(g *game.Game) (*Server, error) {
-	c, err := net.Listen("tcp", ":8080")
+func NewServer(port string, g *game.Game) (*Server, error) {
+	c, err := net.Listen(protocol, port)
 	if err != nil {
 		return nil, err
 	}
@@ -29,53 +35,68 @@ func NewServer(g *game.Game) (*Server, error) {
 	return &Server{
 		game:                  g,
 		conn:                  c,
-		player:                make(map[uuid.UUID]*net.Conn),
+		running:               true,
 		Messenger:             &protobufHandler{},
 		concurrentConnections: make(chan struct{}, maxConcurrentConnections),
+		player:                make(map[uuid.UUID]*net.Conn),
+		hasConnections:        make(chan struct{}),
 	}, nil
 }
 
 func (s *Server) Start() {
-	fmt.Println("shjkdsafhjkasdhfjkasfdhjk")
-	// s.game.Start()
-	for {
+	// Start a goroutine to listen to the GameStateChan
+	go s.handleConnections()
+
+	// Wait for at least one connection
+	<-s.hasConnections
+
+	go s.broadcastGameSate()
+	go s.game.Start()
+}
+
+func (s *Server) broadcastGameSate() {
+	for gameState := range s.game.GameStateChan {
+		msg, err := proto.Marshal(gameState)
+		if err != nil {
+			fmt.Printf("Error encoding game state message: %v\n", err)
+			continue
+		}
+
+		for _, conn := range s.player {
+			_, err := (*conn).Write(msg)
+			if err != nil {
+				fmt.Printf("Error sending game state to player: %v\n", err)
+				continue
+			}
+		}
+	}
+}
+
+func (s *Server) handleConnections() {
+	for s.running {
 		s.concurrentConnections <- struct{}{} // Acquire a slot in the channel
 		conn, err := s.conn.Accept()
 		if err != nil {
-			fmt.Println("Error accepting connection:", err)
 			<-s.concurrentConnections // Release the slot in the channel
 			continue
 		}
 
 		p := game.NewPlayer(conn)
-		ale, err := s.Messenger.EncodeMessage()
-		conn.Write(ale)
-		fmt.Println("p", p)
 		s.game.Players = append(s.game.Players, p)
 		s.player[p.ID] = &p.Conn
 		fmt.Printf("New player connected, ID: %v\n", p.ID)
 		go s.handlePlayer(p)
+
+		// signal that there is at least one connection
+		select {
+		case <-s.hasConnections:
+		default:
+			close(s.hasConnections)
+		}
 	}
 }
 
 func (s *Server) handlePlayer(p *game.Player) {
-	// Start listening for player input
-	// go p.Listen()
-
-	// Send the initial state to the player
-	// initialState := s.game.SerializeGameState()
-	// err := p.Write(initialState)
-	// if err != nil {
-	// 	fmt.Printf("Error writing to player connection: %v", err)
-	// 	return
-	// }
-	defer func() {
-		p.Conn.Close()
-		// delete(s.player, p.ID)
-		// s.game.Players = []
-		<-s.concurrentConnections // Release the slot in the channel
-	}()
-	// Keep listening for updates from the player
 	for {
 		buf := make([]byte, 1024)
 		n, err := p.Conn.Read(buf)
@@ -84,25 +105,30 @@ func (s *Server) handlePlayer(p *game.Player) {
 			fmt.Printf("Error reading message from player: %v\n", err)
 			return
 		}
-		fmt.Println("server decode msg", msg)
 
 		switch m := msg.Type.(type) {
 		case *protobuf.Message_Move:
-			s.game.InputChan <- game.InputMessage{
-				PlayerID: p.ID,
-				Input:    game.Direction(*m.Move.GetDirection().Enum()),
-			}
+			s.handleInputMessage(m, p.ID)
 		case *protobuf.Message_Disconnect:
+			p.Conn.Close()
+			delete(s.player, p.ID)
+			<-s.concurrentConnections // Release the slot in the channel
+
 			fmt.Printf("Player %v disconnected\n", p.ID)
 			return
 		}
 	}
 }
 
-func (s *Server) handleInputMessage(msg *game.InputMessage) {
-	s.game.InputChan <- *msg
+func (s *Server) handleInputMessage(m *protobuf.Message_Move, id uuid.UUID) {
+	s.game.InputChan <- game.InputMessage{
+		PlayerID: id,
+		Input:    game.Direction(*m.Move.GetDirection().Enum()),
+	}
 }
 
 func (s *Server) Stop() {
+	s.game.Stop()
+	s.running = false
 	s.conn.Close()
 }

@@ -2,11 +2,10 @@ package game
 
 import (
 	"bytes"
-	"fmt"
-	"math/rand"
 	"sync"
 	"time"
 
+	"github.com/AlexEkdahl/snakes/network/protobuf"
 	"github.com/google/uuid"
 )
 
@@ -30,12 +29,13 @@ const (
 )
 
 type Game struct {
-	level     *level
-	DrawBuff  bytes.Buffer
-	Players   []*Player
-	InputChan chan InputMessage
-	food      []*Food
-	mu        sync.Mutex
+	level         *level
+	Players       []*Player
+	InputChan     chan InputMessage
+	food          []*Food
+	mu            sync.Mutex
+	GameStateChan chan *protobuf.Message
+	running       bool
 }
 
 type InputMessage struct {
@@ -55,28 +55,24 @@ type Food struct {
 
 func NewGame(width, height int) *Game {
 	return &Game{
-		DrawBuff:  bytes.Buffer{},
-		Players:   []*Player{},
-		InputChan: make(chan InputMessage),
-		food:      []*Food{},
-		mu:        sync.Mutex{},
-	}
-}
-
-func NewFood(xBound, yBound int) *Food {
-	rand.Seed(time.Now().UnixNano())
-	return &Food{
-		x: rand.Intn(xBound),
-		y: rand.Intn(yBound),
+		Players:       []*Player{},
+		InputChan:     make(chan InputMessage),
+		food:          []*Food{},
+		mu:            sync.Mutex{},
+		GameStateChan: make(chan *protobuf.Message, 1),
+		level:         newLevel(width, height),
+		running:       true,
 	}
 }
 
 func newLevel(width, height int) *level {
 	data := make([][]cell, height)
 
+	// Initialize each element of the slice to empty
 	for h := 0; h < height; h++ {
+		data[h] = make([]cell, width)
 		for w := 0; w < width; w++ {
-			data[h] = make([]cell, width)
+			data[h][w] = void
 		}
 	}
 
@@ -106,75 +102,95 @@ func newLevel(width, height int) *level {
 
 func (g *Game) gameLoop() {
 	for {
-		time.Sleep(time.Millisecond * 1000)
-		fmt.Println("linda")
+		go g.updatePlayerSnakes()
+		g.mu.Lock()
+		gameState := g.SerializeGameState()
+		g.GameStateChan <- gameState
+		g.mu.Unlock()
+
+		time.Sleep(time.Millisecond * 200)
 	}
+}
+
+func (g *Game) SerializeGameState() *protobuf.Message {
+	state := g.renderLevel()
+	gameState := &protobuf.Message{
+		Type: &protobuf.Message_Game{
+			Game: state.String(),
+		},
+	}
+	return gameState
 }
 
 func (g *Game) Start() {
-	go g.gameLoop()
-}
-
-func (g *Game) HandleCollision(playerNum int) {
-	player := g.Players[playerNum]
-	head := player.Snake.Head
-
-	// Check for collision with walls
-	if head.x < 0 || head.x >= g.level.width || head.y < 0 || head.y >= g.level.height {
-		g.endGame(playerNum)
-		return
-	}
-
-	// Check for collision with other snakes
-	for i, otherPlayer := range g.Players {
-		if i != playerNum {
-			if g.snakeCollidesWithSnake(player.Snake, otherPlayer.Snake) {
-				g.endGame(playerNum)
-				return
-			}
-		}
+	if g.running {
+		go g.gameLoop()
+		go g.handleInput()
 	}
 }
 
-func (g *Game) endGame(playerNum int) {
-	g.Players[playerNum].Conn.Close()
-	g.Players = append(g.Players[:playerNum], g.Players[playerNum+1:]...)
+func (g *Game) Stop() {
+	g.running = false
 }
 
-func (g *Game) snakeCollidesWithSnake(snake1, snake2 *Snake) bool {
-	for segment := snake2.Head; segment != nil; segment = segment.next {
-		if snake1.collidesWithNode(segment) {
-			return true
-		}
-	}
-	return false
-}
-
-func (s *Snake) collidesWithNode(node *Node) bool {
-	for segment := s.Head; segment != nil; segment = segment.next {
-		if segment == node {
-			return true
-		}
-	}
-	return false
-}
-
-func (g *Game) renderLevel() {
-	g.DrawBuff.Reset()
+func (g *Game) renderLevel() bytes.Buffer {
+	var buff bytes.Buffer
 
 	for h := 0; h < g.level.height; h++ {
 		for w := 0; w < g.level.width; w++ {
+			for _, p := range g.Players {
+				if p.Snake.Occupies(h, w) {
+					buff.WriteString("S")
+				}
+			}
 			switch g.level.data[h][w] {
 			case wall:
-				g.DrawBuff.WriteString("X")
-			case snake:
-				g.DrawBuff.WriteString("S")
+				buff.WriteString("X")
 			case fruit:
-				g.DrawBuff.WriteString("F")
+				buff.WriteString("F")
 			case void:
-				g.DrawBuff.WriteString(" ")
+				buff.WriteString(" ")
 			}
 		}
-		g.DrawBuff.WriteString("\n")
+		buff.WriteString("\n")
+	}
+
+	for _, p := range g.Players {
+		buff.WriteString("\n")
+		if p.Snake != nil {
+			buff.WriteString("Direction: ")
+			switch p.Snake.Dir {
+			case Up:
+				buff.WriteString("Up")
+			case Right:
+				buff.WriteString("Right")
+			case Down:
+				buff.WriteString("Down")
+			case Left:
+				buff.WriteString("Left")
+			}
+			buff.WriteString("\n")
+		}
+	}
+	return buff
+}
+
+func (g *Game) handleInput() {
+	for input := range g.InputChan {
+		for _, player := range g.Players {
+			if player.ID == input.PlayerID {
+				player.Snake.SetDirection(input.Input)
+			}
+		}
+	}
+}
+
+func (g *Game) updatePlayerSnakes() {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	for _, p := range g.Players {
+		if p.Snake != nil {
+			p.Snake.Move()
+		}
 	}
 }

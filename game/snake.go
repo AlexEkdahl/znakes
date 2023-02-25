@@ -51,13 +51,13 @@ func (s *Snake) Move() {
 	var newHeadX, newHeadY int
 	switch s.Dir {
 	case Up:
-		newHeadX, newHeadY = s.Head.x, s.Head.y-1
-	case Right:
-		newHeadX, newHeadY = s.Head.x+1, s.Head.y
-	case Down:
-		newHeadX, newHeadY = s.Head.x, s.Head.y+1
-	case Left:
 		newHeadX, newHeadY = s.Head.x-1, s.Head.y
+	case Right:
+		newHeadX, newHeadY = s.Head.x, s.Head.y+1
+	case Down:
+		newHeadX, newHeadY = s.Head.x+1, s.Head.y
+	case Left:
+		newHeadX, newHeadY = s.Head.x, s.Head.y-1
 	}
 
 	// create a new head node and add it to the beginning of the snake
@@ -87,9 +87,10 @@ func (s *Snake) SetDirection(direction Direction) {
 	}
 
 	s.Dir = direction
+	fmt.Println("s.Di", s.Dir)
 }
 
-func (s *Snake) CollidesWith(x, y int) bool {
+func (s *Snake) Occupies(x, y int) bool {
 	curr := s.Head
 	for curr != nil {
 		if curr.x == x && curr.y == y {
@@ -109,6 +110,21 @@ func (s *Snake) Check(matrix [][]int) bool {
 		curr = curr.next
 	}
 	return true
+}
+
+func (s *Snake) GetNodeLocations() [][]int {
+	locations := make([][]int, s.Length)
+	node := s.Head
+	for i := 0; i < s.Length; i++ {
+		if i == 0 {
+			locations[i] = []int{node.x, node.y}
+		} else {
+			locations[i] = locations[i-1][:] // copy the previous slice
+			locations[i][0], locations[i][1] = node.x, node.y
+		}
+		node = node.next
+	}
+	return locations
 }
 
 func (s *Snake) String() string {

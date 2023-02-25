@@ -2,6 +2,10 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"os/signal"
+	"time"
 
 	"github.com/AlexEkdahl/snakes/game"
 	"github.com/AlexEkdahl/snakes/network"
@@ -17,43 +21,58 @@ func main() {
 		_ = keyboard.Close()
 	}()
 
-	go readInput()
+	moveChan := make(chan game.Direction, 10)
+	interrupt := make(chan os.Signal, 1)
 
-	g := game.NewGame(10, 10)
-	s, err := network.NewServer(g)
-	if err != nil {
-		fmt.Println("err", err)
-	}
-	c, err := network.NewClient(":8080")
-	if err != nil {
-		fmt.Println("err", err)
-	}
+	go readInput(moveChan, interrupt)
+	g := game.NewGame(50, 15)
 
-	go s.Start()
-	c.Start()
+	// Start the server
+	server, err := network.NewServer("localhost:8080", g)
+	if err != nil {
+		log.Fatal(err)
+	}
+	go server.Start()
+
+	// Start the client
+	client, err := network.NewClient("localhost:8080", moveChan)
+	if err != nil {
+		log.Fatal(err)
+	}
+	go client.Start()
+
+	signal.Notify(interrupt, os.Interrupt)
+
+	<-interrupt
+	fmt.Println("\nShutting down the server...")
+	server.Stop()
+	time.Sleep(1 * time.Second)
 }
 
-func readInput() {
+func readInput(mc chan game.Direction, stop chan os.Signal) {
 	for {
 		char, key, err := keyboard.GetKey()
 		if err != nil {
-			panic(err)
+			continue
 		}
 
-		if key == keyboard.KeyEsc {
-			break
+		if key == keyboard.KeyCtrlC || key == keyboard.KeyEsc {
+			keyboard.Close()
+			stop <- os.Interrupt
+			return
 		}
 
-		fmt.Printf("key: %v, char: %c\n", key, char)
-
-		if char == 'w' {
-			// move snake up
-		} else if char == 's' {
-			// move snake down
-		} else if char == 'a' {
-			// move snake left
-		} else if char == 'd' {
-			// move snake right
+		switch char {
+		case 'k':
+			mc <- game.Up
+		case 'j':
+			mc <- game.Down
+		case 'h':
+			mc <- game.Left
+		case 'l':
+			mc <- game.Right
+		default:
+			continue
 		}
 	}
 }
