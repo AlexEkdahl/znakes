@@ -7,21 +7,25 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
       - name: Set up Go
         uses: actions/setup-go@v2
+
         with:
           go-version: 1.19
 
-      - name: Build binaries for all platforms
-        run: |
-          make $(SERVER_BINARY)-linux
-          make $(SERVER_BINARY)-windows
-          make $(SERVER_BINARY)-arm64
+      - name: Build Server
+        run: make $(SERVER_BINARY)
+
+      - name: Build Server
+        run: make $(CLIENT_BINARY)
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -34,38 +38,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Windows Binary
+      - name: Upload
         uses: svenstaro/upload-release-action@v2
         with:
           tag_name: ${{ github.ref }}
-          name: Windows Binary
-          asset_path: ./bin/windows-amd64
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload macOS Binary
-        uses: svenstaro/upload-release-action@v2
-        with:
-          tag_name: ${{ github.ref }}
-          name: macOS Binary
-          asset_path: bin/game-darwin-amd64
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Linux Binary
-        uses: svenstaro/upload-release-action@v2
-        with:
-          tag_name: ${{ github.ref }}
-          name: Linux Binary
-          asset_path: ./bin/linux-amd64
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Apple Silicon Binary
-        uses: svenstaro/upload-release-action@v2
-        with:
-          tag_name: ${{ github.ref }}
-          name: Apple Silicon Binary
-          asset_path: ./bin/darwin-arm64
+          name: Binary
+          asset_path: ./bin
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
