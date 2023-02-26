@@ -20,11 +20,12 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t $DOCKERHUB_USERNAME/$DOCKERIMG_NAME:${{ replace(github.ref, 'refs/tags/', '') }} .
-          docker tag $DOCKERHUB_USERNAME/$DOCKERIMG_NAME:${{ github.ref }} $DOCKERHUB_USERNAME/$DOCKERIMG_NAME:latest
+          tag=$(echo "${{ github.ref }}" | awk -F/ '{print $NF}')
+          docker build -t $DOCKERHUB_USERNAME/$DOCKERIMG_NAME:${tag} .
+          docker tag $DOCKERHUB_USERNAME/$DOCKERIMG_NAME:${tag} $DOCKERHUB_USERNAME/$DOCKERIMG_NAME:latest
 
       - name: Push Docker image
         run: |
           echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
-          docker push $DOCKERHUB_USERNAME/$DOCKERIMG_NAME:${{ github.ref }}
+          docker push $DOCKERHUB_USERNAME/$DOCKERIMG_NAME:${tag}
           docker push $DOCKERHUB_USERNAME/$DOCKERIMG_NAME:latest
