@@ -1,0 +1,30 @@
+name: Update Docker Image
+
+on:
+  release:
+    types: [created]
+
+env:
+  DOCKERHUB_USERNAME: alexekdahl
+  DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+  DOCKERIMG_NAME: znakes-server
+
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build Docker image
+        run: |
+          docker build -t $DOCKERHUB_USERNAME/my-server-image:${{ github.ref }} .
+          docker tag $DOCKERHUB_USERNAME/$DOCKERIMG_NAME:${{ github.ref }} $DOCKERHUB_USERNAME/$DOCKERIMG_NAME:latest
+
+      - name: Push Docker image
+        run: |
+          echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
+          docker push $DOCKERHUB_USERNAME/$DOCKERIMG_NAME:${{ github.ref }}
+          docker push $DOCKERHUB_USERNAME/$DOCKERIMG_NAME:latest
