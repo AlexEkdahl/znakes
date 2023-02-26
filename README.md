@@ -1,3 +1,4 @@
+[![Build and Test](https://github.com/AlexEkdahl/znakes/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/AlexEkdahl/znakes/actions/workflows/test.yml)[![Update Docker Image](https://github.com/AlexEkdahl/znakes/actions/workflows/create_docker.yml/badge.svg?branch=main&event=release)](https://github.com/AlexEkdahl/znakes/actions/workflows/create_docker.yml)
 # TCP Snake Game
 
 This is a network game of snakes that allows multiple players to compete against each other over TCP. Players control a snake that moves around the game board, eating fruit and avoiding obstacles. The player with the highest score at the end of the game wins.

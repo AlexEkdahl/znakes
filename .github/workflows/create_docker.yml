@@ -27,5 +27,6 @@ jobs:
       - name: Push Docker image
         run: |
           echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
+          tag=$(echo "${{ github.ref }}" | awk -F/ '{print $NF}')
           docker push $DOCKERHUB_USERNAME/$DOCKERIMG_NAME:${tag}
           docker push $DOCKERHUB_USERNAME/$DOCKERIMG_NAME:latest
