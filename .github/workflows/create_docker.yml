@@ -20,7 +20,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t $DOCKERHUB_USERNAME/my-server-image:${{ github.ref }} .
+          docker build -t $DOCKERHUB_USERNAME/$DOCKERIMG_NAME:${{ replace(github.ref, 'refs/tags/', '') }} .
           docker tag $DOCKERHUB_USERNAME/$DOCKERIMG_NAME:${{ github.ref }} $DOCKERHUB_USERNAME/$DOCKERIMG_NAME:latest
 
       - name: Push Docker image

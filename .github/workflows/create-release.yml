@@ -26,21 +26,10 @@ jobs:
       - name: Build Server
         run: make $(CLIENT_BINARY)
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref }}
-          name: Release ${{ github.ref }}
-          body: Automatic release
-          files: |
-            bin/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Upload
         uses: svenstaro/upload-release-action@v2
         with:
-          tag_name: ${{ github.ref }}
+          tag: ${{ github.ref }}
           name: Binary
           asset_path: ./bin
         env:
