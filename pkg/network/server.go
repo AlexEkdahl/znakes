@@ -112,6 +112,7 @@ func (s *Server) handlePlayer(p *game.Player) {
 		case *protobuf.Message_Disconnect:
 			p.Conn.Close()
 			delete(s.player, p.ID)
+			s.game.RemovePlayer(p.ID)
 			<-s.concurrentConnections // Release the slot in the channel
 
 			fmt.Printf("Player %v disconnected\n", p.ID)

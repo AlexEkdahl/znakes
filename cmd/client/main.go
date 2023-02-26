@@ -35,8 +35,9 @@ func main() {
 	go client.Start()
 
 	<-interrupt
-	keyboard.Close()
 	fmt.Println("\nShutting down...")
+	client.Stop()
+	keyboard.Close()
 }
 
 func readInput(mc chan game.Direction, stop chan os.Signal) {

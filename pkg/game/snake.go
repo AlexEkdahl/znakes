@@ -20,11 +20,13 @@ type Snake struct {
 
 func NewSnake(x, y int) *Snake {
 	head := &Node{x: x, y: y}
+	tail := &Node{x: x, y: y + 1}
 
+	head.next = tail
 	return &Snake{
 		Head:   head,
-		Tail:   head,
-		Length: 1,
+		Tail:   tail,
+		Length: 2,
 		Dir:    Right,
 	}
 }
@@ -51,31 +53,40 @@ func (s *Snake) Move() {
 	var newHeadX, newHeadY int
 	switch s.Dir {
 	case Up:
-		newHeadX, newHeadY = s.Head.x-1, s.Head.y
-	case Right:
-		newHeadX, newHeadY = s.Head.x, s.Head.y+1
-	case Down:
-		newHeadX, newHeadY = s.Head.x+1, s.Head.y
-	case Left:
 		newHeadX, newHeadY = s.Head.x, s.Head.y-1
+	case Right:
+		newHeadX, newHeadY = s.Head.x+1, s.Head.y
+	case Down:
+		newHeadX, newHeadY = s.Head.x, s.Head.y+1
+	case Left:
+		newHeadX, newHeadY = s.Head.x-1, s.Head.y
 	}
 
 	// create a new head node and add it to the beginning of the snake
 	newHead := &Node{newHeadX, newHeadY, s.Head}
 	s.Head = newHead
+	s.Length++
+	s.RemoveTail()
+}
 
-	// if the snake hasn't grown, remove the last node
+func (s *Snake) RemoveTail() {
 	if s.Length == 0 {
-		// find the new tail node
+		return
+	}
+
+	if s.Length == 1 {
+		s.Tail = s.Head
+		s.Tail.next = nil
+	} else {
 		curr := s.Head
 		for curr.next.next != nil {
 			curr = curr.next
 		}
+		curr.next = nil
 		s.Tail = curr
-		s.Tail.next = nil
-	} else {
-		s.Length--
 	}
+
+	s.Length--
 }
 
 func (s *Snake) SetDirection(direction Direction) {
@@ -89,7 +100,7 @@ func (s *Snake) SetDirection(direction Direction) {
 	s.Dir = direction
 }
 
-func (s *Snake) Occupies(x, y int) bool {
+func (s *Snake) Occupies(y, x int) bool {
 	curr := s.Head
 	for curr != nil {
 		if curr.x == x && curr.y == y {

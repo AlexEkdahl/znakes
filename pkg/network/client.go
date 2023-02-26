@@ -1,7 +1,6 @@
 package network
 
 import (
-	"fmt"
 	"net"
 
 	"github.com/AlexEkdahl/snakes/pkg/game"
@@ -19,6 +18,7 @@ type Client struct {
 	Messenger Messenger
 	Printer   MessagePrinter
 	moveChan  chan game.Direction
+	isRunning bool
 }
 
 func NewClient(addr string, mc chan game.Direction) (*Client, error) {
@@ -32,6 +32,7 @@ func NewClient(addr string, mc chan game.Direction) (*Client, error) {
 		Messenger: &protobufHandler{},
 		Printer:   NewPrinter(),
 		moveChan:  mc,
+		isRunning: true,
 	}, nil
 }
 
@@ -40,14 +41,14 @@ func (c *Client) Start() {
 	c.handlerMessages()
 }
 
-func (c *Client) handlerMessages() error {
-	for {
+func (c *Client) handlerMessages() {
+	for c.isRunning {
 		buf := make([]byte, 1024)
 		n, err := c.conn.Read(buf)
 
 		msg, err := c.Messenger.DecodeMessage(buf[:n])
 		if err != nil {
-			fmt.Printf("Error reading message from player: %v\n", err)
+			continue
 		}
 
 		switch msg.Type.(type) {
@@ -72,12 +73,24 @@ func (c *Client) sendMoves() {
 		}
 		b, err := c.Messenger.EncodeMessage(msg)
 		if err != nil {
-			fmt.Printf("Error sending move to server: %v\n", err)
+			continue
 		}
 		c.conn.Write(b)
 	}
 }
 
+func (c *Client) disconect() {
+	msg := &protobuf.Message{
+		Type: &protobuf.Message_Disconnect{},
+	}
+	b, err := c.Messenger.EncodeMessage(msg)
+	if err == nil {
+		c.conn.Write(b)
+	}
+}
+
 func (c *Client) Stop() {
+	c.isRunning = false
+	c.disconect()
 	c.conn.Close()
 }

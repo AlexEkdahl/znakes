@@ -135,44 +135,43 @@ func (g *Game) Stop() {
 
 func (g *Game) renderLevel() bytes.Buffer {
 	var buff bytes.Buffer
-
 	for h := 0; h < g.level.height; h++ {
 		for w := 0; w < g.level.width; w++ {
+			occupied := false
 			for _, p := range g.Players {
 				if p.Snake.Occupies(h, w) {
 					buff.WriteString("S")
+					occupied = true
+					break
 				}
 			}
-			switch g.level.data[h][w] {
-			case wall:
-				buff.WriteString("X")
-			case fruit:
-				buff.WriteString("F")
-			case void:
-				buff.WriteString(" ")
+			if !occupied {
+				switch g.level.data[h][w] {
+				case wall:
+					buff.WriteString("X")
+				case fruit:
+					buff.WriteString("F")
+				case void:
+					buff.WriteString(" ")
+				}
 			}
 		}
 		buff.WriteString("\n")
 	}
 
-	for _, p := range g.Players {
-		buff.WriteString("\n")
-		if p.Snake != nil {
-			buff.WriteString("Direction: ")
-			switch p.Snake.Dir {
-			case Up:
-				buff.WriteString("Up")
-			case Right:
-				buff.WriteString("Right")
-			case Down:
-				buff.WriteString("Down")
-			case Left:
-				buff.WriteString("Left")
-			}
-			buff.WriteString("\n")
+	return buff
+}
+
+func (g *Game) RemovePlayer(playerID uuid.UUID) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	for i, player := range g.Players {
+		if player.ID == playerID {
+			g.Players = append(g.Players[:i], g.Players[i+1:]...)
+			break
 		}
 	}
-	return buff
 }
 
 func (g *Game) handleInput() {
