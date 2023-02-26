@@ -2,7 +2,7 @@ package network
 
 import (
 	"github.com/AlexEkdahl/snakes/pkg/network/protobuf"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 type Messenger interface {

@@ -6,8 +6,8 @@ import (
 
 	"github.com/AlexEkdahl/snakes/pkg/game"
 	"github.com/AlexEkdahl/snakes/pkg/network/protobuf"
-	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -100,9 +100,13 @@ func (s *Server) handlePlayer(p *game.Player) {
 	for {
 		buf := make([]byte, 1024)
 		n, err := p.Conn.Read(buf)
-		msg, err := s.Messenger.DecodeMessage(buf[:n])
 		if err != nil {
 			fmt.Printf("Error reading message from player: %v\n", err)
+			return
+		}
+		msg, err := s.Messenger.DecodeMessage(buf[:n])
+		if err != nil {
+			fmt.Printf("Error decode message: %v\n", err)
 			return
 		}
 

@@ -45,6 +45,9 @@ func (c *Client) handlerMessages() {
 	for c.isRunning {
 		buf := make([]byte, 1024)
 		n, err := c.conn.Read(buf)
+		if err != nil {
+			continue
+		}
 
 		msg, err := c.Messenger.DecodeMessage(buf[:n])
 		if err != nil {
@@ -75,7 +78,10 @@ func (c *Client) sendMoves() {
 		if err != nil {
 			continue
 		}
-		c.conn.Write(b)
+
+		if _, err := c.conn.Write(b); err != nil {
+			continue
+		}
 	}
 }
 
@@ -83,9 +89,13 @@ func (c *Client) disconect() {
 	msg := &protobuf.Message{
 		Type: &protobuf.Message_Disconnect{},
 	}
+
 	b, err := c.Messenger.EncodeMessage(msg)
-	if err == nil {
-		c.conn.Write(b)
+	if err != nil {
+		return
+	}
+	if _, err := c.conn.Write(b); err != nil {
+		return
 	}
 }
 

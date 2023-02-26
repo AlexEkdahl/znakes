@@ -32,7 +32,6 @@ type Game struct {
 	level         *level
 	Players       []*Player
 	InputChan     chan InputMessage
-	food          []*Food
 	mu            sync.Mutex
 	GameStateChan chan *protobuf.Message
 	running       bool
@@ -49,15 +48,10 @@ type level struct {
 	data   [][]cell
 }
 
-type Food struct {
-	x, y int
-}
-
 func NewGame(width, height int) *Game {
 	return &Game{
 		Players:       []*Player{},
 		InputChan:     make(chan InputMessage),
-		food:          []*Food{},
 		mu:            sync.Mutex{},
 		GameStateChan: make(chan *protobuf.Message, 1),
 		level:         newLevel(width, height),
