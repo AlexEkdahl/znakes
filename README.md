@@ -2,6 +2,19 @@
 
 This is a network game of snakes that allows multiple players to compete against each other over TCP. Players control a snake that moves around the game board, eating fruit and avoiding obstacles. The player with the highest score at the end of the game wins.
 
+## Todos
+
+- [ ] Improve game performance
+- [ ] Add support for multiple game modes
+- [ ] Create a tutorial for new users
+- [ ] Refactor code for better readability
+- [ ] Write more unit tests
+- [ ] Implement score system
+- [ ] Integrate with a database for high scores
+- [ ] Figure out how to halt the game with only one player in multiplayer mode (one player leaves)
+- [ ] Add collision detection
+- [ ] Add fruits
+
 ## Getting Started
 
 To build the game, you will need to have Go installed on your system. You can download Go from the official website at [golang.org](https://golang.org).
