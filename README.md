@@ -14,6 +14,7 @@ This is a network game of snakes that allows multiple players to compete against
 - [ ] Figure out how to halt the game with only one player in multiplayer mode (one player leaves)
 - [ ] Add collision detection
 - [ ] Add fruits
+- [ ] Fix GitHub Actions
 
 ## Getting Started
 
