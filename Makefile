@@ -1,3 +1,9 @@
+setup:
+	@echo "Setting up the environment"
+	@./scripts/setup.sh
+
+#####################################
+
 # Define the name of the binary
 BINARY=game
 
