@@ -32,7 +32,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           overwrite: true
           tag: ${{ github.ref }}
-          asset_name: server
+          asset_name: "${{ matrix.os }}-server"
           file: ./bin/server
 
       - name: Upload Client
@@ -41,5 +41,5 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           overwrite: true
           tag: ${{ github.ref }}
-          asset_name: client
+          asset_name: "${{ matrix.os }}-client"
           file: ./bin/client
