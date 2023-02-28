@@ -45,7 +45,7 @@ func NewServer(port string, g *game.Game) (*Server, error) {
 
 func (s *Server) Start() {
 	// Start a goroutine to listen to the GameStateChan
-	go s.handleConnections()
+	go s.acceptConnections()
 
 	// Wait for at least one connection
 	<-s.hasConnections
@@ -72,7 +72,7 @@ func (s *Server) broadcastGameSate() {
 	}
 }
 
-func (s *Server) handleConnections() {
+func (s *Server) acceptConnections() {
 	for s.running {
 		s.concurrentConnections <- struct{}{} // Acquire a slot in the channel
 		conn, err := s.conn.Accept()

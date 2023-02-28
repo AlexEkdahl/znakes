@@ -85,7 +85,7 @@ func (c *Client) sendMoves() {
 	}
 }
 
-func (c *Client) disconect() {
+func (c *Client) disconnect() {
 	msg := &protobuf.Message{
 		Type: &protobuf.Message_Disconnect{},
 	}
@@ -101,6 +101,6 @@ func (c *Client) disconect() {
 
 func (c *Client) Stop() {
 	c.isRunning = false
-	c.disconect()
+	c.disconnect()
 	c.conn.Close()
 }
