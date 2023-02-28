@@ -2,6 +2,9 @@ setup:
 	@echo "Setting up the environment"
 	@./scripts/setup.sh
 
+cibuild:
+	./scripts/cibuild.sh
+
 #####################################
 
 # Define the name of the binary
