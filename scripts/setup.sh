@@ -1,7 +1,7 @@
 #!/bin/bash
 
 go mod download
-install github.com/golangci/golangci-lint/cmd/golangci-lint
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 go install github.com/segmentio/golines@latest
 
 cp scripts/pre-commit .git/hooks/pre-commit
