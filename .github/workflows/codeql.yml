@@ -42,7 +42,7 @@ jobs:
 
     - run: |
         echo "Run, Build Application using script"
-        make all
+        make
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
