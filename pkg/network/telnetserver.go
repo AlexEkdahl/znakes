@@ -9,15 +9,9 @@ import (
 	"github.com/AlexEkdahl/snakes/pkg/game"
 )
 
-// type MessagePrinter interface {
-// 	PrintMessage(msg string)
-// 	Clear()
-// }
-
 type TelnetServer struct {
 	game    *game.Game
 	conn    net.Listener
-	Printer MessagePrinter
 	clients map[net.Conn]struct{}
 	mutex   sync.Mutex
 }
@@ -32,7 +26,6 @@ func NewTelnetServer(port string, g *game.Game) (*TelnetServer, error) {
 	return &TelnetServer{
 		game:    g,
 		conn:    c,
-		Printer: NewPrinter(),
 		clients: make(map[net.Conn]struct{}),
 	}, nil
 }
