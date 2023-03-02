@@ -12,8 +12,6 @@ WORKDIR /app
 
 COPY --from=builder /app/server .
 
-ENV PORT=8080
-
 EXPOSE $PORT
 
-CMD ["./server", "--port", "$PORT"]
+CMD ["./server"]

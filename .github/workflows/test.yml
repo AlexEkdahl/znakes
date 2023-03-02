@@ -1,5 +1,5 @@
 name: Build and Test
-on: [push, pull_request]
+on: [push]
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -10,6 +10,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Build project
-        run: make znakes
+        run: make build
       - name: Test project
         run: make test
