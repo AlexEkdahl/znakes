@@ -12,10 +12,10 @@ SERVER_SRC=./cmd/server/main.go
 BIN_DIR=./bin
 .DEFAULT_GOAL := run
 
-$(SERVER_BINARY):
-	@go build -ldflags="-s -w" -o $(BIN_DIR)/$@ $(SERVER_SRC) >/dev/null
+build:
+	@go build -ldflags="-s -w" -o $(BIN_DIR)/$(SERVER_BINARY) $(SERVER_SRC) >/dev/null
 
-run: $(SERVER_BINARY)
+run: build
 	$(BIN_DIR)/$(SERVER_BINARY)
 
 test:
@@ -27,7 +27,6 @@ clean:
 
 #####################################
 
-PLATFORMS := linux/amd64 windows/amd64 darwin/amd64
 LINUX_AMD64_DIR=./bin/linux-amd64
 LINUX_ARM_DIR=./bin/linux-arm
 WINDOWS_AMD64_DIR=./bin/windows-amd64
