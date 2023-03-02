@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/AlexEkdahl/snakes/pkg/network/protobuf"
 	"github.com/google/uuid"
 )
 
@@ -33,7 +32,7 @@ type Game struct {
 	Players       []*Player
 	InputChan     chan InputMessage
 	mu            sync.Mutex
-	GameStateChan chan *protobuf.Message
+	GameStateChan chan *[]byte
 	running       bool
 }
 
@@ -53,7 +52,7 @@ func NewGame(width, height int) *Game {
 		Players:       []*Player{},
 		InputChan:     make(chan InputMessage),
 		mu:            sync.Mutex{},
-		GameStateChan: make(chan *protobuf.Message, 1),
+		GameStateChan: make(chan *[]byte, 1),
 		level:         newLevel(width, height),
 		running:       true,
 	}
@@ -106,14 +105,14 @@ func (g *Game) gameLoop() {
 	}
 }
 
-func (g *Game) SerializeGameState() *protobuf.Message {
+func (g *Game) SerializeGameState() *[]byte {
 	state := g.renderLevel()
-	gameState := &protobuf.Message{
-		Type: &protobuf.Message_Game{
-			Game: state.String(),
-		},
-	}
-	return gameState
+	// gameState := &protobuf.Message{
+	// 	Type: &protobuf.Message_Game{
+	// 		Game: state.String(),
+	// 	},
+	// }
+	return &state
 }
 
 func (g *Game) Start() {
@@ -127,14 +126,26 @@ func (g *Game) Stop() {
 	g.running = false
 }
 
-func (g *Game) renderLevel() bytes.Buffer {
+var telnetControlChars = map[string]byte{
+	"InterpretAsCommand": 255,
+	"Will":               251,
+	"Wont":               252,
+	"Do":                 253,
+	"Dont":               254,
+	"SubnegotiationEnd":  240,
+	"CarriageReturn":     13,
+	"LineFeed":           10,
+	"ClearScreen":        27,
+}
+
+func (g *Game) renderLevel() []byte {
 	var buff bytes.Buffer
 	for h := 0; h < g.level.height; h++ {
 		for w := 0; w < g.level.width; w++ {
 			occupied := false
 			for _, p := range g.Players {
 				if p.Snake.Occupies(h, w) {
-					buff.WriteString("S")
+					buff.WriteByte('S')
 					occupied = true
 					break
 				}
@@ -142,18 +153,18 @@ func (g *Game) renderLevel() bytes.Buffer {
 			if !occupied {
 				switch g.level.data[h][w] {
 				case wall:
-					buff.WriteString("X")
+					buff.WriteByte('X')
 				case fruit:
-					buff.WriteString("F")
+					buff.WriteByte('X')
 				case void:
-					buff.WriteString(" ")
+					buff.WriteByte(' ')
 				}
 			}
 		}
-		buff.WriteString("\n")
+		buff.Write([]byte{telnetControlChars["CarriageReturn"], telnetControlChars["LineFeed"]})
 	}
 
-	return buff
+	return buff.Bytes()
 }
 
 func (g *Game) RemovePlayer(playerID uuid.UUID) {

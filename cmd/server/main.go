@@ -19,7 +19,7 @@ func main() {
 	signal.Notify(interrupt, os.Interrupt)
 
 	g := game.NewGame(50, 19)
-	server, err := network.NewServer(*port, g)
+	server, err := network.NewTelnetServer(*port, g)
 	if err != nil {
 		log.Fatal(err)
 	}
