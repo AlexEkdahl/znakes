@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"math/rand"
 	"net"
-	"strconv"
 	"sync"
 	"time"
 
@@ -205,11 +204,6 @@ func (g *Game) renderLevel() []byte {
 		buff.Write([]byte{telnetControlChars["CarriageReturn"], telnetControlChars["LineFeed"]})
 	}
 
-	for _, player := range g.Players {
-		msg := "Player score: " + strconv.Itoa(player.Score)
-		buff.WriteString(msg)
-		buff.Write([]byte{telnetControlChars["CarriageReturn"], telnetControlChars["LineFeed"]})
-	}
 	return buff.Bytes()
 }
 
