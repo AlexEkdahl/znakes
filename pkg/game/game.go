@@ -2,7 +2,9 @@ package game
 
 import (
 	"bytes"
+	"math/rand"
 	"net"
+	"strconv"
 	"sync"
 	"time"
 
@@ -28,9 +30,15 @@ const (
 	snake
 )
 
+type Fruit struct {
+	X int
+	Y int
+}
+
 type Game struct {
 	level         *level
 	Players       map[uuid.UUID]*Player
+	Fruits        []*Fruit
 	InputChan     chan InputMessage
 	mu            sync.Mutex
 	GameStateChan chan *[]byte
@@ -101,6 +109,9 @@ func (g *Game) gameLoop() {
 	for range ticker.C {
 		go g.updatePlayerSnakes()
 
+		// add new fruit to the game board
+		g.spawnFruits()
+
 		g.mu.Lock()
 		gameState := g.renderLevel()
 		g.GameStateChan <- &gameState
@@ -115,6 +126,23 @@ func (g *Game) updatePlayerSnakes() {
 	for _, player := range g.Players {
 		if player.Snake != nil {
 			player.Snake.Move(g.level.width, g.level.height)
+
+			// check if snake has eaten any fruits
+			for i := 0; i < len(g.Fruits); i++ {
+				fruit := g.Fruits[i]
+				if player.Snake.Occupies(fruit.Y, fruit.X, g.level.height, g.level.width) {
+					player.Score++
+					g.Fruits = append(g.Fruits[:i], g.Fruits[i+1:]...)
+				}
+			}
+		}
+	}
+}
+
+func (g *Game) spawnFruits() {
+	if len(g.Fruits) < 2 {
+		for i := len(g.Fruits); i < 2; i++ {
+			g.Fruits = append(g.Fruits, &Fruit{rand.Intn(g.level.width - 1), rand.Intn(g.level.height - 1)})
 		}
 	}
 }
@@ -154,21 +182,34 @@ func (g *Game) renderLevel() []byte {
 					break
 				}
 			}
-
 			if !occupied {
-				switch g.level.data[h][w] {
-				case wall:
-					buff.WriteByte('X')
-				case fruit:
-					buff.WriteByte('F')
-				case void:
-					buff.WriteByte(' ')
+				// check for fruits at this position
+				for _, fruit := range g.Fruits {
+					if fruit.X == w && fruit.Y == h {
+						buff.WriteByte('F')
+						occupied = true
+						break
+					}
+				}
+
+				if !occupied {
+					switch g.level.data[h][w] {
+					case wall:
+						buff.WriteByte('X')
+					case void:
+						buff.WriteByte(' ')
+					}
 				}
 			}
 		}
 		buff.Write([]byte{telnetControlChars["CarriageReturn"], telnetControlChars["LineFeed"]})
 	}
 
+	for _, player := range g.Players {
+		msg := "Player score: " + strconv.Itoa(player.Score)
+		buff.WriteString(msg)
+		buff.Write([]byte{telnetControlChars["CarriageReturn"], telnetControlChars["LineFeed"]})
+	}
 	return buff.Bytes()
 }
 
