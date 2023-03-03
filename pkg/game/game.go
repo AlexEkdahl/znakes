@@ -2,6 +2,7 @@ package game
 
 import (
 	"bytes"
+	"net"
 	"sync"
 	"time"
 
@@ -29,7 +30,7 @@ const (
 
 type Game struct {
 	level         *level
-	Players       []*Player
+	Players       map[uuid.UUID]*Player
 	InputChan     chan InputMessage
 	mu            sync.Mutex
 	GameStateChan chan *[]byte
@@ -49,7 +50,7 @@ type level struct {
 
 func NewGame(width, height int) *Game {
 	return &Game{
-		Players:       []*Player{},
+		Players:       make(map[uuid.UUID]*Player),
 		InputChan:     make(chan InputMessage),
 		mu:            sync.Mutex{},
 		GameStateChan: make(chan *[]byte, 1),
@@ -94,25 +95,28 @@ func newLevel(width, height int) *level {
 }
 
 func (g *Game) gameLoop() {
-	for {
-		go g.updatePlayerSnakes()
-		g.mu.Lock()
-		gameState := g.SerializeGameState()
-		g.GameStateChan <- gameState
-		g.mu.Unlock()
+	ticker := time.NewTicker(200 * time.Millisecond)
+	defer ticker.Stop()
 
-		time.Sleep(time.Millisecond * 200)
+	for range ticker.C {
+		go g.updatePlayerSnakes()
+
+		g.mu.Lock()
+		gameState := g.renderLevel()
+		g.GameStateChan <- &gameState
+		g.mu.Unlock()
 	}
 }
 
-func (g *Game) SerializeGameState() *[]byte {
-	state := g.renderLevel()
-	// gameState := &protobuf.Message{
-	// 	Type: &protobuf.Message_Game{
-	// 		Game: state.String(),
-	// 	},
-	// }
-	return &state
+func (g *Game) updatePlayerSnakes() {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	for _, player := range g.Players {
+		if player.Snake != nil {
+			player.Snake.Move(g.level.width, g.level.height)
+		}
+	}
 }
 
 func (g *Game) Start() {
@@ -143,19 +147,20 @@ func (g *Game) renderLevel() []byte {
 	for h := 0; h < g.level.height; h++ {
 		for w := 0; w < g.level.width; w++ {
 			occupied := false
-			for _, p := range g.Players {
-				if p.Snake.Occupies(h, w) {
+			for _, player := range g.Players {
+				if player.Snake.Occupies(h, w, g.level.height, g.level.width) {
 					buff.WriteByte('S')
 					occupied = true
 					break
 				}
 			}
+
 			if !occupied {
 				switch g.level.data[h][w] {
 				case wall:
 					buff.WriteByte('X')
 				case fruit:
-					buff.WriteByte('X')
+					buff.WriteByte('F')
 				case void:
 					buff.WriteByte(' ')
 				}
@@ -171,30 +176,21 @@ func (g *Game) RemovePlayer(playerID uuid.UUID) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	for i, player := range g.Players {
-		if player.ID == playerID {
-			g.Players = append(g.Players[:i], g.Players[i+1:]...)
-			break
-		}
-	}
+	delete(g.Players, playerID)
+}
+
+func (g *Game) AddPlayer(conn net.Conn) *Player {
+	p := NewPlayer(conn)
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.Players[p.ID] = p
+	return p
 }
 
 func (g *Game) handleInput() {
 	for input := range g.InputChan {
-		for _, player := range g.Players {
-			if player.ID == input.PlayerID {
-				player.Snake.SetDirection(input.Input)
-			}
-		}
-	}
-}
-
-func (g *Game) updatePlayerSnakes() {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	for _, p := range g.Players {
-		if p.Snake != nil {
-			p.Snake.Move()
+		if player, ok := g.Players[input.PlayerID]; ok {
+			player.Snake.SetDirection(input.Input)
 		}
 	}
 }

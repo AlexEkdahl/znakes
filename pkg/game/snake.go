@@ -48,27 +48,6 @@ func NewSnakeWithLength(x, y int) *Snake {
 	}
 }
 
-func (s *Snake) Move() {
-	// calculate the new position of the head of the snake
-	var newHeadX, newHeadY int
-	switch s.Dir {
-	case Up:
-		newHeadX, newHeadY = s.Head.x, s.Head.y-1
-	case Right:
-		newHeadX, newHeadY = s.Head.x+1, s.Head.y
-	case Down:
-		newHeadX, newHeadY = s.Head.x, s.Head.y+1
-	case Left:
-		newHeadX, newHeadY = s.Head.x-1, s.Head.y
-	}
-
-	// create a new head node and add it to the beginning of the snake
-	newHead := &Node{newHeadX, newHeadY, s.Head}
-	s.Head = newHead
-	s.Length++
-	s.RemoveTail()
-}
-
 func (s *Snake) RemoveTail() {
 	if s.Length == 0 {
 		return
@@ -100,9 +79,54 @@ func (s *Snake) SetDirection(direction Direction) {
 	s.Dir = direction
 }
 
-func (s *Snake) Occupies(y, x int) bool {
+func (s *Snake) Move(maxX, maxY int) {
+	// calculate the new position of the head of the snake
+	var newHeadX, newHeadY int
+	switch s.Dir {
+	case Up:
+		newHeadX, newHeadY = s.Head.x, s.Head.y-1
+		if newHeadY < 0 {
+			newHeadY = maxY - 1
+		}
+	case Right:
+		newHeadX, newHeadY = s.Head.x+1, s.Head.y
+		if newHeadX == maxX {
+			newHeadX = 0
+		}
+	case Down:
+		newHeadX, newHeadY = s.Head.x, s.Head.y+1
+		if newHeadY == maxY {
+			newHeadY = 0
+		}
+	case Left:
+		newHeadX, newHeadY = s.Head.x-1, s.Head.y
+		if newHeadX < 0 {
+			newHeadX = maxX - 1
+		}
+	}
+
+	// create a new head node and add it to the beginning of the snake
+	newHead := &Node{newHeadX, newHeadY, s.Head}
+	s.Head = newHead
+	s.Length++
+	s.RemoveTail()
+}
+
+func (s *Snake) Occupies(y, x, height, width int) bool {
 	curr := s.Head
 	for curr != nil {
+		// Move the snake to the other side if it goes out of bounds
+		if curr.x < 1 {
+			curr.x = width - 2
+		} else if curr.x >= width-1 {
+			curr.x = 1
+		}
+		if curr.y < 1 {
+			curr.y = height - 2
+		} else if curr.y >= height-1 {
+			curr.y = 1
+		}
+
 		if curr.x == x && curr.y == y {
 			return true
 		}

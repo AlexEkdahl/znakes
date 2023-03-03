@@ -62,8 +62,7 @@ func (s *TelnetServer) handleConnections() {
 
 		s.mutex.Lock()
 		s.clients[conn] = struct{}{}
-		p := game.NewPlayer(conn)
-		s.game.Players = append(s.game.Players, p)
+		p := s.game.AddPlayer(conn)
 		s.mutex.Unlock()
 
 		go s.handleClient(*p)
@@ -78,41 +77,47 @@ func (s *TelnetServer) handleClient(p game.Player) {
 		p.Conn.Close()
 	}()
 
-	// Get the file descriptor for the connection
-
 	// Negotiate Telnet options
-	if _, err := p.Conn.Write([]byte{255, 253, 34, 255, 250, 34, 1, 0, 255, 240, 255, 251, 1}); err != nil {
+	if err := negotiateTelnetOptions(p.Conn); err != nil {
 		fmt.Printf("Error negotiating Telnet options: %v\n", err)
 		return
 	}
 
 	reader := bufio.NewReader(p.Conn)
 	for {
-		b, err := reader.ReadByte()
+		input, err := reader.ReadByte()
 		if err != nil {
 			break
 		}
 
-		input := string(b)
 		switch input {
-		case "h":
+		case 'h':
 			s.game.InputChan <- game.InputMessage{Input: game.Left, PlayerID: p.ID}
-		case "j":
+		case 'j':
 			s.game.InputChan <- game.InputMessage{Input: game.Down, PlayerID: p.ID}
-		case "k":
+		case 'k':
 			s.game.InputChan <- game.InputMessage{Input: game.Up, PlayerID: p.ID}
-		case "l":
+		case 'l':
 			s.game.InputChan <- game.InputMessage{Input: game.Right, PlayerID: p.ID}
-		case "q":
+		case 'q':
 			p.Conn.Close()
 			delete(s.clients, p.Conn)
 			s.game.RemovePlayer(p.ID)
 
 			fmt.Printf("Player %v disconnected\n", p.ID)
-		default:
-			continue
+			return
 		}
 	}
+}
+
+func negotiateTelnetOptions(conn net.Conn) error {
+	// Telnet option negotiation
+	binaryOption := []byte{255, 253, 34, 255, 250, 34, 1, 0, 255, 240, 255, 251, 1}
+	if _, err := conn.Write(binaryOption); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *TelnetServer) Stop() {
