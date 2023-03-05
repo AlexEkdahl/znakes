@@ -18,7 +18,7 @@ func main() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
-	g := game.NewGame(50, 19)
+	g := game.NewGame(100, 30)
 	server, err := network.NewTelnetServer(*port, g)
 	if err != nil {
 		log.Fatal(err)
